@@ -5,14 +5,55 @@ A super simple FastAPI application that allows students to view and sign up
 for extracurricular activities at Mergington High School.
 """
 
+
 from fastapi import FastAPI, HTTPException
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import RedirectResponse
 import os
 from pathlib import Path
 
+# SQLAlchemy imports
+from sqlalchemy import create_engine, Column, Integer, String, ForeignKey
+from sqlalchemy.orm import sessionmaker, declarative_base, relationship
+
+# MySQL connection string (à adapter selon votre config)
+MYSQL_USER = os.getenv("MYSQL_USER", "root")
+MYSQL_PASSWORD = os.getenv("MYSQL_PASSWORD", "password")
+MYSQL_HOST = os.getenv("MYSQL_HOST", "localhost")
+MYSQL_DB = os.getenv("MYSQL_DB", "school_db")
+
+DATABASE_URL = f"mysql+mysqlconnector://{MYSQL_USER}:{MYSQL_PASSWORD}@{MYSQL_HOST}/{MYSQL_DB}"
+
+engine = create_engine(DATABASE_URL, echo=True)
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+Base = declarative_base()
+
+# Modèles SQLAlchemy
+class Activity(Base):
+    __tablename__ = "activities"
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String(100), unique=True, nullable=False)
+    description = Column(String(255))
+    schedule = Column(String(100))
+    max_participants = Column(Integer)
+    participants = relationship("Participant", back_populates="activity", cascade="all, delete-orphan")
+
+class Participant(Base):
+    __tablename__ = "participants"
+    id = Column(Integer, primary_key=True, index=True)
+    email = Column(String(100), nullable=False)
+    activity_id = Column(Integer, ForeignKey("activities.id"))
+    activity = relationship("Activity", back_populates="participants")
+
+def create_tables():
+    Base.metadata.create_all(bind=engine)
+
+
 app = FastAPI(title="Mergington High School API",
               description="API for viewing and signing up for extracurricular activities")
+
+# Création des tables au démarrage
+create_tables()
 
 # Mount the static files directory
 current_dir = Path(__file__).parent
