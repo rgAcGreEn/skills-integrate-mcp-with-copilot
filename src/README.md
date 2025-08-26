@@ -12,14 +12,22 @@ A super simple FastAPI application that allows students to view and sign up for 
 1. Install the dependencies:
 
    ```
-   pip install fastapi uvicorn
+   pip install -r requirements.txt
    ```
 
-2. Run the application:
+2. Configure the database (optional):
+   
+   By default, the application uses SQLite for development. To use MySQL:
+   - Create a MySQL database: `CREATE DATABASE school_activities;`
+   - Update the `.env` file with your MySQL connection string
+   
+3. Run the application:
 
    ```
    python app.py
    ```
+   
+   The application will automatically create the database tables and populate them with sample data on first startup.
 
 3. Open your browser and go to:
    - API documentation: http://localhost:8000/docs
@@ -34,17 +42,19 @@ A super simple FastAPI application that allows students to view and sign up for 
 
 ## Data Model
 
-The application uses a simple data model with meaningful identifiers:
+The application uses SQLAlchemy ORM with automatic table creation and supports both SQLite (development) and MySQL (production):
 
-1. **Activities** - Uses activity name as identifier:
+1. **Activities** - Stored in `activities` table:
 
-   - Description
-   - Schedule
-   - Maximum number of participants allowed
-   - List of student emails who are signed up
+   - id (Primary Key)
+   - name (Unique activity name)
+   - description
+   - schedule
+   - max_participants (Maximum number of participants allowed)
 
-2. **Students** - Uses email as identifier:
-   - Name
-   - Grade level
+2. **Participants** - Stored in `participants` table:
+   - id (Primary Key)
+   - email (Student email address)
+   - activity_id (Foreign Key to activities table)
 
-All data is stored in memory, which means data will be reset when the server restarts.
+The application automatically creates tables and initializes sample data on startup. Data persists between server restarts.
